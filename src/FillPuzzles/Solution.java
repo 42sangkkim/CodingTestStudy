@@ -1,35 +1,44 @@
 package FillPuzzles;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 class Solution {
     public int solution(int[][] game_board, int[][] table) {
         int[][] indexTable = indexParts(table);
 
-        System.out.println("=== Index Table ===");
-        for (int[] row : indexTable) {
-            for (int col : row) {
-                System.out.print(col+" ");
-            }
-            System.out.print("\n");
-        }
-        System.out.print("\n");
+//        System.out.println("=== Index Table ===");
+//        for (int[] row : indexTable) {
+//            for (int col : row) {
+//                System.out.print(col+" ");
+//            }
+//            System.out.print("\n");
+//        }
+//        System.out.print("\n");
 
-        ArrayList<int[][]> parts = separateParts(indexTable);
+        HashMap<Integer, int[][]> parts = separateParts(indexTable);
 
         int num = parts.size();
-        for (int i=0; i<num; i++) {
-            System.out.println("====== [Part "+(i+1)+"] ======");
-            for (int[] row : parts.get(i)) {
-                for (int col : row) {
-                    System.out.print(col+" ");
-                }
-                System.out.print("\n");
-            }
-            System.out.print("\n");
-        }
+//        for (int i=0; i<num; i++) {
+//            System.out.println("====== [Part "+(i+1)+"] ======");
+//            for (int[] row : parts.get(i)) {
+//                for (int col : row) {
+//                    System.out.print(col+" ");
+//                }
+//                System.out.print("\n");
+//            }
+//            System.out.print("\n");
+//        }
+//
+//        System.out.println("=== Game Board ===");
+//        for (int[] row : game_board) {
+//            for (int col : row) {
+//                System.out.print(col+" ");
+//            }
+//            System.out.print("\n");
+//        }
+//        System.out.print("\n");
 
-        return insertParts(game_board.length, game_board, parts);
+        return insertParts(game_board.length, game_board, num, parts);
     }
 
     private int[][] indexParts(int[][] table) {
@@ -74,7 +83,7 @@ class Solution {
         }
     }
 
-    private ArrayList<int[][]> separateParts(int[][] indexTable) {
+    private HashMap<Integer, int[][]> separateParts(int[][] indexTable) {
         int partsNum = 0;
         for (int[] row : indexTable) {
             for (int col : row) {
@@ -85,77 +94,58 @@ class Solution {
         }
         partsNum += 1;
 
-        ArrayList<int[][]> parts = new ArrayList<>();
+
+        HashMap<Integer, int[][]> parts = new HashMap<>();
 
         int len = indexTable.length;
         for (int i=1; i<partsNum; i++) {
-            int x1 = 50, x2 = 0, y1 = 50, y2 = 0;
+            int[] leftTop = {50, 50}, rightBottom = {0, 0};
             for (int x=0; x<len; x++) {
                 for (int y=0; y<len; y++) {
                     if (indexTable[x][y] == i) {
-                        if (x > x2) {
-                            x2 = x;
-                        }
-                        if (x < x1) {
-                            x1 = x;
-                        }
-                        if (y > y2) {
-                            y2 = y;
-                        }
-                        if (y < y1) {
-                            y1 = y;
-                        }
+                        leftTop[0] = Math.min(leftTop[0], x);
+                        leftTop[1] = Math.min(leftTop[1], y);
+                        rightBottom[0] = Math.max(rightBottom[0], x);
+                        rightBottom[1] = Math.max(rightBottom[1], y);
                     }
                 }
             }
 
-            int width = x2 - x1 + 1;
-            int height = y2 - y1 + 1;
+            int width = rightBottom[0] - leftTop[0] + 1;
+            int height = rightBottom[1] - leftTop[1] + 1;
             int[][] part = new int[width][height];
 
             for (int x=0; x<width; x++) {
                 for (int y=0; y<height; y++) {
-                    if (x+x1 < len && y+y1 < len) {
-                        part[x][y] = indexTable[x+x1][y+y1] == i ? 1 : 0;
+                    if (x+leftTop[0] < len && y+leftTop[1] < len) {
+                        part[x][y] = indexTable[x+leftTop[0]][y+leftTop[1]] == i ? 1 : 0;
                     }
                 }
             }
-            parts.add(part);
+            parts.put(i-1, part);
         }
         return parts;
     }
 
-    private int insertParts(int len, int[][] board, ArrayList<int[][]> parts) {
-        int size = parts.size(), result = 0, tmp;
-        int[][] tmpBoard;
-        boolean nothingMatched = true;
-        ArrayList<int[][]> tmpParts;
+    private int insertParts(int len, int[][] board, int size, HashMap<Integer, int[][]> parts) {
+        int result = 0, width, height;
+
         for (int i=0; i<size; i++) {
+            if (!parts.containsKey(i))
+                continue;
             int[][] part = parts.get(i);
-            int width = part.length, height = part[0].length;
             for (int dir=0; dir<4; dir++) {
-                for (int x=0; x<len-width; x++) {
-                    for (int y=0; y<len-height; y++) {
-                        tmpBoard = match(board, part, x, y, i);
+                width = part.length;
+                height = part[0].length;
+                for (int x=0; x<len-width+1; x++) {
+                    for (int y=0; y<len-height+1; y++) {
+                        int[][] tmpBoard = match(board, part, x, y, i);
                         if (tmpBoard.length == 0) {
                             continue;
                         } else {
-                            nothingMatched = false;
-                            tmpParts = new ArrayList<>(parts);
+                            HashMap<Integer, int[][]> tmpParts = new HashMap<>(parts);
                             tmpParts.remove(i);
-                            int[][] block = new int[len][len];
-                            for (int a=0; a<len; a++) {
-                                for (int b=0; b<len; b++) {
-                                    block[a][b] = 1;
-                                }
-                            }
-                            tmpParts.add(i, block);
-
-                            tmp = insertParts(len, tmpBoard, tmpParts);
-                            if (tmp == 0) {
-                                nothingMatched = true;
-                                continue;
-                            }
+                            int tmp = insertParts(len, tmpBoard, size, tmpParts);
                             if (tmp > result) result = tmp;
                         }
                     }
@@ -163,24 +153,20 @@ class Solution {
                 part = turn90deg(part);
             }
         }
-        if (nothingMatched) {
-            System.out.println("============================================");
-            for (int[] row : board) {
-                for (int col : row) {
-                    System.out.print(col + " ");
-                }
-                System.out.print("\n");
-            }
+        if (result == 0) {
             result = countCovers(len, board);
         }
         return result;
     }
 
     private int[][] match(int[][] board, int[][] part, int x, int y, int index) {
-        int width = part.length;
-        int height = part[0].length;
-        int[][] tmpBoard;
-        tmpBoard = board.clone();
+        int width = part.length, height = part[0].length, len = board.length;
+        int[][] tmpBoard = new int[len][len];
+        for (int i=0; i<len; i++) {
+            for (int j=0; j<len; j++) {
+                tmpBoard[i][j] = board[i][j];
+            }
+        }
         for (int i=0; i<width; i++) {
             for (int j=0; j<height; j++) {
                 if (part[i][j] == 1) {
