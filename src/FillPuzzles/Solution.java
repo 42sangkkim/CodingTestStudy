@@ -3,42 +3,30 @@ package FillPuzzles;
 import java.util.HashMap;
 
 class Solution {
+    int max;
+
     public int solution(int[][] game_board, int[][] table) {
         int[][] indexTable = indexParts(table);
 
-//        System.out.println("=== Index Table ===");
-//        for (int[] row : indexTable) {
-//            for (int col : row) {
-//                System.out.print(col+" ");
-//            }
-//            System.out.print("\n");
-//        }
-//        System.out.print("\n");
+        int len = game_board.length;
+        System.out.println("==== Game Board ====    ==== Index Table ====");
+        for (int i=0; i<len; i++) {
+            System.out.print("    ");
+            for (int j=0; j<len; j++) {
+                System.out.print(game_board[i][j]+" ");
+            }
+            System.out.print("      ");
+            for (int j=0; j<len; j++) {
+                System.out.print(indexTable[i][j]+" ");
+            }
+            System.out.print("\n");
+        }
 
         HashMap<Integer, int[][]> parts = separateParts(indexTable);
 
-        int num = parts.size();
-//        for (int i=0; i<num; i++) {
-//            System.out.println("====== [Part "+(i+1)+"] ======");
-//            for (int[] row : parts.get(i)) {
-//                for (int col : row) {
-//                    System.out.print(col+" ");
-//                }
-//                System.out.print("\n");
-//            }
-//            System.out.print("\n");
-//        }
-//
-//        System.out.println("=== Game Board ===");
-//        for (int[] row : game_board) {
-//            for (int col : row) {
-//                System.out.print(col+" ");
-//            }
-//            System.out.print("\n");
-//        }
-//        System.out.print("\n");
+        int size = parts.size();
 
-        return insertParts(game_board.length, game_board, num, parts);
+        return insertParts(len, game_board, size, parts);
     }
 
     private int[][] indexParts(int[][] table) {
@@ -52,13 +40,7 @@ class Solution {
                         indexTable[i][j] = indexTable[i-1][j];
                         if (j>0 && table[i][j-1] == 1) {
                             int from = indexTable[i][j-1], to = indexTable[i-1][j];
-                            for (int[] row : table) {
-                                for (int col : row) {
-                                    if (col == from)
-                                        col = to;
-                                }
-                            }
-                            simplify(indexTable, from);
+                            changeIndex(indexTable, from, to);
                             lastIndex--;
                         }
                     } else if (j>0 && table[i][j-1] == 1){
@@ -72,11 +54,18 @@ class Solution {
         return indexTable;
     }
 
-    private void simplify(int[][] table, int n) {
+    private void changeIndex(int[][] table, int from, int to) {
         int len = table.length;
         for (int i=0; i<len; i++) {
             for (int j=0; j<len; j++) {
-                if (table[i][j] >= n) {
+                if (table[i][j] == from) {
+                    table[i][j] = to;
+                }
+            }
+        }
+        for (int i=0; i<len; i++) {
+            for (int j=0; j<len; j++) {
+                if (table[i][j] > from) {
                     table[i][j] -= 1;
                 }
             }
@@ -140,9 +129,7 @@ class Solution {
                 for (int x=0; x<len-width+1; x++) {
                     for (int y=0; y<len-height+1; y++) {
                         int[][] tmpBoard = match(board, part, x, y, i);
-                        if (tmpBoard.length == 0) {
-                            continue;
-                        } else {
+                        if (tmpBoard.length != 0) {
                             HashMap<Integer, int[][]> tmpParts = new HashMap<>(parts);
                             tmpParts.remove(i);
                             int tmp = insertParts(len, tmpBoard, size, tmpParts);
@@ -163,9 +150,7 @@ class Solution {
         int width = part.length, height = part[0].length, len = board.length;
         int[][] tmpBoard = new int[len][len];
         for (int i=0; i<len; i++) {
-            for (int j=0; j<len; j++) {
-                tmpBoard[i][j] = board[i][j];
-            }
+            System.arraycopy(board[i], 0, tmpBoard[i], 0, len);
         }
         for (int i=0; i<width; i++) {
             for (int j=0; j<height; j++) {
